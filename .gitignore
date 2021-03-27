@@ -1,0 +1,17 @@
+# Archives
+*.zip
+*.tar
+*.gz
+
+# Misc
+examples/
+get_pi_requirements.sh
+
+# TensorFlow models
+models/
+
+# Virtual Environment
+tflite-env/
+
+# OS Gubbins
+Thumbs.db
