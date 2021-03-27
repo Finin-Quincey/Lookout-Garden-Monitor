@@ -4,6 +4,7 @@
 *.gz
 
 # Misc
+logs/
 examples/
 get_pi_requirements.sh
 
