@@ -6,7 +6,6 @@ This module is responsible for interacting with all the electronics connected to
 Some day, there will be more text here...
 """
 
-import time           # Timing functions
 import pigpio as gpio # GPIO control library
 
 ### Constants ###
@@ -27,6 +26,8 @@ REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
 
 ### Setup ###
 
+log.info("Initialising GPIO pins")
+
 pi = gpio.pi() # Init GPIO object
 
 pi.set_mode(PIR_SENSOR_PIN,   gpio.INPUT)
@@ -41,4 +42,5 @@ pi.set_pull_up_down(POWER_BUTTON_PIN, gpio.PUD_UP)
 ### Functions ###
 
 def get_pir_state():
-    return pi.read()
+    """  """
+    return pi.read(PIR_SENSOR_PIN)
