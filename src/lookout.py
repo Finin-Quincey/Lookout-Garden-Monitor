@@ -6,9 +6,14 @@ defined in the UML activity diagram), coordinating and timing the vision and gpi
 shutting down the pi when the power button is pressed.
 """
 
+# Development mode is used when the pi is plugged into a monitor, mouse and keyboard, and has the following effects:
+# - The annotated camera feed is displayed on-screen
+# - Logging is set to DEBUG level instead of INFO so that DEBUG messages are logged as well
+# - When the power button is pressed, the program exits rather than shutting down the pi
 DEV_MODE = True
 
-import os                      # System commands
+import os                      # Operating system commands
+import sys                     # Python system commands
 import time                    # Timing functions
 from datetime import datetime  # Real-world date and time
 import logging as log          # Log messages and log file output
@@ -55,24 +60,31 @@ def on_pir_activated():
     """
     log.debug("PIR sensor activated")
     
+    global state
+    state = State.ACTIVE
+    
 def on_power_btn_pressed():
     """
     Called from the GPIO manager when the power button is pressed.
     """
-    log.debug("Power button pressed")
-    gpio.set_power_led_state(True)
-    time.sleep(2)
-    gpio.set_power_led_state(False)
-    
     log.info("Shutting down...")
+    
+    global state
+    state = State.SHUTTING_DOWN
+    gpio.set_power_led_state(True)
+    
+    time.sleep(2) # TODO: Placeholder
+    
     gpio.shutdown()
     
     if DEV_MODE:
-        exit()
+        sys.exit()
     else:
         os.system("sudo shutdown -h now")
 
 ### Setup ###
+
+gpio.set_power_led_state(True)
 
 # Global variables
 state = State.INACTIVE
@@ -82,3 +94,27 @@ log.info("Setting up callbacks")
 
 gpio.init_pir_callback(on_pir_activated)
 gpio.init_btn_callback(on_power_btn_pressed)
+
+# Camera setup
+log.info("Initialising camera")
+
+time.sleep(2) # TODO: Placeholder
+
+gpio.set_power_led_state(False)
+
+log.info("Setup done")
+
+i = 0
+
+# LED flashing
+while state != State.SHUTTING_DOWN:
+    
+    if i == 20:
+        gpio.set_power_led_state(True)
+        i = 0
+    else:
+        if i == 0:
+            gpio.set_power_led_state(False)
+        i += 1
+        
+    time.sleep(0.2)

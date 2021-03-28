@@ -90,6 +90,9 @@ def shutdown():
     global btn_callback
     global pi
     
+    # For now we need to turn this off for shutdown or it will stay on, at some point I may look into ways of turning it
+    # off later on in the shutdown sequence but it doesn't really matter that much - the main thing is that it stays on
+    # while the video is saving
     set_power_led_state(False)
     set_ir_led_state(False)
     
@@ -129,13 +132,13 @@ def init_btn_callback(func):
 def pir_pin_callback(pin, level, tick):
     log.debug("PIR sensor callback triggered (GPIO %i)", pin)
     if level != 1:
-        log.debug("Unexpected callback value: %i (probably a timeout)", level)
+        log.warn("Unexpected callback value on GPIO %i: %i (probably a timeout)", pin, level)
         return # Sanity check: ignore if it wasn't a rising edge (only happens on timeout)
     pir_cb_forward() # Pass control flow up to the main lookout class
     
 def btn_pin_callback(pin, level, tick):
     log.debug("Power button callback triggered (GPIO %i)", pin)
     if level != 1:
-        log.debug("Unexpected callback value: %i (probably a timeout)", level)
+        log.warn("Unexpected callback value on GPIO %i: %i (probably a timeout)", pin, level)
         return # Sanity check: ignore if it wasn't a rising edge (only happens on timeout)
     btn_cb_forward() # Pass control flow up to the main lookout class
