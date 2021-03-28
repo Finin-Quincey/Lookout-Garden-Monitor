@@ -27,6 +27,12 @@ REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
 
 ### Setup ###
 
+pir_callback = None
+btn_callback = None
+# Functions to call when forwarding callbacks to the main control script
+pir_cb_forward = None
+btn_cb_forward = None
+
 # Init GPIO pins into the correct modes and pull up/downs
 
 log.info("Initialising GPIO pins")
@@ -40,7 +46,7 @@ pi.set_mode(BUZZER_PIN,       gpio.ALT0) # ALT0 is GPCLK for pin 4 (see https://
 pi.set_mode(IR_LED_PIN_1,     gpio.OUTPUT)
 pi.set_mode(IR_LED_PIN_2,     gpio.OUTPUT)
 
-pi.set_pull_up_down(POWER_BUTTON_PIN, gpio.PUD_UP)
+pi.set_pull_up_down(POWER_BUTTON_PIN, gpio.PUD_UP) # Power button is active low
 
 ### Functions ###
 
@@ -74,14 +80,62 @@ def set_ir_led_state(state):
     pi.write(IR_LED_PIN_1, state)
     pi.write(IR_LED_PIN_2, state)
     
-def reset_pins():
+def shutdown():
     """
-    Resets all output pins to their states on startup.
+    Resets all output pins to their 'off' states, cleans up callbacks, and so on.
     """
+    # Chances are none of this is necessary as we're shutting the pi down anyway, but there's no harm in doing it anyway
+    
+    global pir_callback
+    global btn_callback
+    global pi
+    
     set_power_led_state(False)
     set_ir_led_state(False)
+    
+    pir_callback.cancel()
+    btn_callback.cancel()
+    
+    pi.stop()
+    
+### Callbacks ###
     
 # So as not to create circular dependencies, the callback functions (which need to trigger stuff in the main lookout.py
 # module) are passed into here from that module on startup. It's not good practice to call functions in higher-level code
 # from lower-level code, especially when you're already doing it the other way round - sure, it doesn't really matter here
 # but the programmer in me is insisting that I do this properly!
+
+def init_pir_callback(func):
+    """
+    Registers the given function to be called when the PIR sensor activates, and sets up the GPIO interrupt.
+    """
+    global pir_callback
+    global pir_cb_forward
+    global pi
+    pir_cb_forward = func
+    pir_callback = pi.callback(PIR_SENSOR_PIN, gpio.RISING_EDGE, pir_pin_callback)
+    
+def init_btn_callback(func):
+    """
+    Registers the given function to be called when the power button is pressed, and sets up the GPIO interrupt.
+    """
+    global btn_callback
+    global btn_cb_forward
+    global pi
+    btn_cb_forward = func
+    # Still using rising edge here because it's normal for buttons to respond when released, not when pressed
+    btn_callback = pi.callback(POWER_BUTTON_PIN, gpio.RISING_EDGE, btn_pin_callback)
+
+def pir_pin_callback(pin, level, tick):
+    log.debug("PIR sensor callback triggered (GPIO %i)", pin)
+    if level != 1:
+        log.debug("Unexpected callback value: %i (probably a timeout)", level)
+        return # Sanity check: ignore if it wasn't a rising edge (only happens on timeout)
+    pir_cb_forward() # Pass control flow up to the main lookout class
+    
+def btn_pin_callback(pin, level, tick):
+    log.debug("Power button callback triggered (GPIO %i)", pin)
+    if level != 1:
+        log.debug("Unexpected callback value: %i (probably a timeout)", level)
+        return # Sanity check: ignore if it wasn't a rising edge (only happens on timeout)
+    btn_cb_forward() # Pass control flow up to the main lookout class

@@ -6,7 +6,7 @@ defined in the UML activity diagram), coordinating and timing the vision and gpi
 shutting down the pi when the power button is pressed.
 """
 
-DEBUG = True
+DEV_MODE = True
 
 import os                      # System commands
 import time                    # Timing functions
@@ -17,7 +17,7 @@ from enum import Enum          # Enumeration types
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
                 datefmt = "%d-%m-%Y %I:%M:%S %p",
-                level = log.DEBUG if DEBUG else log.INFO,
+                level = log.DEBUG if DEV_MODE else log.INFO,
                 handlers = [
                     # Print to console and write to a log file
                     log.FileHandler(f"{os.getcwd()}/logs/{datetime.now().strftime('%Y-%m-%d_%H%M')}.log"),
@@ -40,12 +40,37 @@ OBJECT_WHITELIST = ["bat", "scissors"]
 
 # N.B. Because we're using a callback approach here, we can't just have a shutdown method, we also need a way of
 # preventing any callbacks from executing. The only way of doing this is to have the callback exit early when the state
-# changes to shutting down. (Also, a state pattern would probably be overkill here)
+# changes to shutting down. (Also, a state pattern would probably be overkill here, this is Python not Java!)
 class State(Enum):
     """Enum representing the different states the program can be in"""
     INACTIVE      = "Inactive"      # Waiting to be triggered via the PIR sensor
     ACTIVE        = "Active"        # Currently recording footage
     SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
+
+### Callbacks ###
+
+def on_pir_activated():
+    """
+    Called from the GPIO manager when the PIR sensor activates.
+    """
+    log.debug("PIR sensor activated")
+    
+def on_power_btn_pressed():
+    """
+    Called from the GPIO manager when the power button is pressed.
+    """
+    log.debug("Power button pressed")
+    gpio.set_power_led_state(True)
+    time.sleep(2)
+    gpio.set_power_led_state(False)
+    
+    log.info("Shutting down...")
+    gpio.shutdown()
+    
+    if DEV_MODE:
+        exit()
+    else:
+        os.system("sudo shutdown -h now")
 
 ### Setup ###
 
@@ -55,8 +80,5 @@ state = State.INACTIVE
 # Callbacks
 log.info("Setting up callbacks")
 
-# Testing stuff
-gpio.get_pir_state()
-gpio.set_power_led_state(True)
-time.sleep(2)
-gpio.set_power_led_state(False)
+gpio.init_pir_callback(on_pir_activated)
+gpio.init_btn_callback(on_power_btn_pressed)
