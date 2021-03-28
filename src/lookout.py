@@ -4,6 +4,8 @@ Lookout
 This is the main control script for the Lookout garden monitor, responsible for executing the overall program flow (as
 defined in the UML activity diagram), coordinating and timing the vision and gpio, and auxiliary functions such as
 shutting down the pi when the power button is pressed.
+
+Author: Finin Quincey
 """
 
 # Development mode is used when the pi is plugged into a monitor, mouse and keyboard, and has the following effects:
@@ -63,6 +65,8 @@ def on_pir_activated():
     global state
     state = State.ACTIVE
     
+    
+    
 def on_power_btn_pressed():
     """
     Called from the GPIO manager when the power button is pressed.
@@ -73,7 +77,7 @@ def on_power_btn_pressed():
     state = State.SHUTTING_DOWN
     gpio.set_power_led_state(True)
     
-    time.sleep(2) # TODO: Placeholder
+    time.sleep(2) # TODO: Placeholder for camera shutdown stuff
     
     gpio.shutdown()
     

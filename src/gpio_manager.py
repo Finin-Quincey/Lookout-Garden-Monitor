@@ -3,7 +3,7 @@ GPIO Manager
 
 This module is responsible for interacting with all the electronics connected to the GPIO pins.
 
-Some day, there will be more text here...
+Author: Finin Quincey
 """
 
 import logging as log
@@ -27,6 +27,7 @@ REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
 
 ### Setup ###
 
+# Init global variables
 pir_callback = None
 btn_callback = None
 # Functions to call when forwarding callbacks to the main control script
