@@ -87,6 +87,8 @@ def shutdown():
     """
     # Chances are none of this is necessary as we're shutting the pi down anyway, but there's no harm in doing it anyway
     
+    log.debug("Shutting down GPIO")
+    
     global pir_callback
     global btn_callback
     global pi

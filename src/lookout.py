@@ -20,6 +20,7 @@ import time                    # Timing functions
 from datetime import datetime  # Real-world date and time
 import logging as log          # Log messages and log file output
 from enum import Enum          # Enumeration types
+import cv2
 
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
@@ -31,14 +32,11 @@ log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
                     log.StreamHandler()
                 ])
 
-log.info("*** Lookout started ***")
-
-import gpio_manager as gpio
-
 ### Constants ###
 
 BUZZ_TIME = 10 # Buzzer active time in seconds
-IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the 
+IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
+FRAMERATE = 20 # Target framerate to capture at, in frames per second
 
 # Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
 OBJECT_BLACKLIST = ["cat", "person"]
@@ -53,6 +51,18 @@ class State(Enum):
     INACTIVE      = "Inactive"      # Waiting to be triggered via the PIR sensor
     ACTIVE        = "Active"        # Currently recording footage
     SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
+    
+### Setup ###
+
+log.info("*** Lookout started ***")
+
+# Global variables
+state = State.INACTIVE
+
+import gpio_manager as gpio
+gpio.set_power_led_state(True)
+
+import camera_manager as camera
 
 ### Callbacks ###
 
@@ -65,7 +75,7 @@ def on_pir_activated():
     global state
     state = State.ACTIVE
     
-    
+    # TODO: Most of the high-level logic goes here
     
 def on_power_btn_pressed():
     """
@@ -77,8 +87,7 @@ def on_power_btn_pressed():
     state = State.SHUTTING_DOWN
     gpio.set_power_led_state(True)
     
-    time.sleep(2) # TODO: Placeholder for camera shutdown stuff
-    
+    camera.shutdown()
     gpio.shutdown()
     
     if DEV_MODE:
@@ -86,23 +95,10 @@ def on_power_btn_pressed():
     else:
         os.system("sudo shutdown -h now")
 
-### Setup ###
-
-gpio.set_power_led_state(True)
-
-# Global variables
-state = State.INACTIVE
-
-# Callbacks
 log.info("Setting up callbacks")
 
 gpio.init_pir_callback(on_pir_activated)
 gpio.init_btn_callback(on_power_btn_pressed)
-
-# Camera setup
-log.info("Initialising camera")
-
-time.sleep(2) # TODO: Placeholder
 
 gpio.set_power_led_state(False)
 
@@ -113,6 +109,13 @@ i = 0
 # LED flashing
 while state != State.SHUTTING_DOWN:
     
+    t = time.perf_counter()
+    
+    camera.capture_frame()
+    
+    if DEV_MODE:
+        camera.display_current()
+    
     if i == 20:
         gpio.set_power_led_state(True)
         i = 0
@@ -120,5 +123,6 @@ while state != State.SHUTTING_DOWN:
         if i == 0:
             gpio.set_power_led_state(False)
         i += 1
-        
-    time.sleep(0.2)
+    
+    # Try to keep a stable framerate by waiting for the rest of the time, if any
+    cv2.waitKey(max(1, int(1000 * (1.0/FRAMERATE - (time.perf_counter() - t)))))
