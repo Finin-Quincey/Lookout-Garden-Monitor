@@ -93,6 +93,7 @@ def on_power_btn_pressed():
     gpio.set_power_led_state(True)
     
     camera.shutdown()
+    object_detector.shutdown()
     gpio.shutdown()
     
     if DEV_MODE:
@@ -148,3 +149,5 @@ while state != State.SHUTTING_DOWN:
 # This prevents the main thread (and hence the program) from terminating until all other threads are done
 callback_thread.join()
 object_detector.thread.join()
+
+log.info("*** Exiting program ***")

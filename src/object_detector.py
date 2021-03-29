@@ -41,6 +41,8 @@ boxes = []
 labels = []
 scores = []
 
+shutdown_flag = False
+
 log.info("Initialising TensorFlow model")
 
 # Most of this is taken from the example scripts, minus the edge TPU stuff since we're not using that
@@ -86,14 +88,23 @@ def run():
     
     time.sleep(1)
     
-    while True: # TODO: Replace with state check
+    while not shutdown_flag:
         process_next()
+        
+    log.info("Object detection thread stopping")
 
 # Create and start the object detection thread
 thread = Thread(target = run, args = (), name = "Object-detection-thread")
 thread.start()
 
 ### Functions ###
+
+def shutdown():
+    """
+    Marks the object detector to shut down after the current cycle is finished
+    """
+    global shutdown_flag
+    shutdown_flag = True
 
 def process_next():
     """
