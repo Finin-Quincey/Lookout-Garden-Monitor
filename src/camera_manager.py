@@ -23,7 +23,6 @@ WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
 
-CONFIDENCE_THRESHOLD = 0.6       # Minimum confidence for an object to count as a detection
 
 INACTIVE_SCREEN = np.zeros((WIDTH, HEIGHT, 3)) # Just a black screen for now
 
@@ -95,30 +94,26 @@ def annotate_current(boxes, labels, scores):
     
     # Loop over all detections and draw detection box if confidence is above minimum threshold
     for i in range(len(scores)):
-        if ((scores[i] > CONFIDENCE_THRESHOLD) and (scores[i] <= 1.0)):
 
-            # Get bounding box coordinates and draw box
-            # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-            ymin = int(max(1,(boxes[i][0] * HEIGHT)))
-            xmin = int(max(1,(boxes[i][1] * WIDTH)))
-            ymax = int(min(HEIGHT,(boxes[i][2] * HEIGHT)))
-            xmax = int(min(WIDTH,(boxes[i][3] * WIDTH)))
-            
-            cv2.rectangle(annotated_frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
+        # Get bounding box coordinates and draw box
+        # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+        ymin = int(max(1,(boxes[i][0] * HEIGHT)))
+        xmin = int(max(1,(boxes[i][1] * WIDTH)))
+        ymax = int(min(HEIGHT,(boxes[i][2] * HEIGHT)))
+        xmax = int(min(WIDTH,(boxes[i][3] * WIDTH)))
+        
+        cv2.rectangle(annotated_frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
 
-            # Draw label
-            object_name = labels[i] # Look up object name from "labels" array using class index
-            label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            cv2.rectangle(annotated_frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-            cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+        # Draw label
+        object_name = labels[i] # Look up object name from "labels" array using class index
+        label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
+        labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+        label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+        cv2.rectangle(annotated_frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+        cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
 
     # Draw framerate in corner of frame
     #cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
-
-    # All the results have been drawn on the frame, so it's time to display it.
-    #cv2.imshow('Object detector', frame)
     
 def display_current():
     """

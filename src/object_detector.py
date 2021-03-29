@@ -27,6 +27,7 @@ import camera_manager as camera
 MODEL_NAME           = "models/Sample_TFLite_model"  # Path to the model directory
 GRAPH_NAME           = "detect.tflite"               # Name of the graph (.tflite) file in the above directory
 LABELMAP_NAME        = "labelmap.txt"                # Name of the label map (.txt) file in the above directory
+CONFIDENCE_THRESHOLD = 0.6                           # Minimum confidence for an object to count as a detection
 
 # Derived values
 CWD_PATH       = os.getcwd()                                      # Path to current working directory
@@ -126,7 +127,11 @@ def process_next():
     scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
     #num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
 
-    print(labels)
+    # Remove results that are below the confidence threshold
+    idx = scores > CONFIDENCE_THRESHOLD
+    boxes = boxes[idx]
+    labels = labels[idx]
+    scores = scores[idx]
     
     log.debug("Detected %i objects", labels.size)
 
