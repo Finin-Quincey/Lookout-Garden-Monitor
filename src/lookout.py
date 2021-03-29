@@ -21,6 +21,7 @@ from datetime import datetime  # Real-world date and time
 import logging as log          # Log messages and log file output
 from enum import Enum          # Enumeration types
 import cv2
+import threading
 
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
@@ -84,7 +85,10 @@ def on_power_btn_pressed():
     log.info("Shutting down...")
     
     global state
+    global callback_thread
     state = State.SHUTTING_DOWN
+    callback_thread = threading.current_thread()
+    
     gpio.set_power_led_state(True)
     
     camera.shutdown()
@@ -106,6 +110,8 @@ log.info("Setup done")
 
 i = 0
 
+camera.open() # This has to be done right before capturing starts or there will be a delay
+
 # LED flashing
 while state != State.SHUTTING_DOWN:
     
@@ -126,3 +132,5 @@ while state != State.SHUTTING_DOWN:
     
     # Try to keep a stable framerate by waiting for the rest of the time, if any
     cv2.waitKey(max(1, int(1000 * (1.0/FRAMERATE - (time.perf_counter() - t)))))
+    
+callback_thread.join() # Wait until power button callback has finished

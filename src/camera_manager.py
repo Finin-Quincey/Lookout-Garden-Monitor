@@ -22,48 +22,50 @@ CAMERA_INDEX  = 0                # Index of the camera to use (there is only one
 WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
-        
+
+INACTIVE_SCREEN = np.zeros((WIDTH, HEIGHT, 3)) # Just a black screen for now
+
 ### Setup ###
 
 log.info("Initialising camera")
 
-# Initialise camera
-stream = cv2.VideoCapture(CAMERA_INDEX)
-stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-stream.set(3, WIDTH)
-stream.set(4, HEIGHT)
+# Initialise camera object
+stream = cv2.VideoCapture()
 
-# Read first frame from the stream
-success, raw_frame = stream.read()
-
-if not success:
-    log.warn("Failed to retrieve current frame from camera")
+# Open preview window
+cv2.namedWindow(WINDOW_TITLE)
+cv2.imshow(WINDOW_TITLE, INACTIVE_SCREEN)
 
 ### Functions ###
-    
-def pause():
-    """
-    Closes the camera and releases the resources it was using.
-    """
-    log.info("Closing camera stream")
-    global stream
-    stream.release()
 
-def resume():
+def open():
     """
-    Reopens the camera after it has been paused.
+    Opens the camera stream.
     """
     log.info("Opening camera stream")
     global stream
     stream.open(CAMERA_INDEX)
+    # For some reason these introduce a delay when capturing the frame, it seems to work okay without them though
+    #stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    #stream.set(3, WIDTH)
+    #stream.set(4, HEIGHT)
+    
+def close():
+    """
+    Closes the camera stream and releases the resources it was using.
+    """
+    log.info("Closing camera stream")
+    global stream
+    stream.release()
     
 def shutdown():
     """
-    Closes the camera, releases the resources it was using and closes any open windows
+    Closes the camera, releases the resources it was using, saves any frames in memory and closes any open windows
     """
     log.info("Closing open windows")
     cv2.destroyAllWindows()
-    pause()
+    close()
+    cv2.waitKey(1) # Required to get opencv to update (must be last it seems)
 
 def capture_frame():
     """
@@ -117,6 +119,7 @@ def display_current():
     Displays the current frame with annotations
     """
     global raw_frame # Using raw frame for debugging purposes
+    cv2.rectangle(raw_frame, (20, 20), (200, 200), (10, 255, 0), 2)
     cv2.imshow(WINDOW_TITLE, raw_frame)
     #global annotated_frame
     #cv2.imshow(WINDOW_TITLE, annotated_frame)
