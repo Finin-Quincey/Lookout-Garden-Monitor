@@ -23,7 +23,7 @@ CAMERA_INDEX  = 0                # Index of the camera to use (there is only one
 WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
-
+FRAMERATE     = 20               # Target framerate to capture at, in frames per second
 TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
 INACTIVE_SCREEN = np.zeros((WIDTH, HEIGHT, 3)) # Just a black screen for now
@@ -43,6 +43,13 @@ stream = cv2.VideoCapture()
 cv2.namedWindow(WINDOW_TITLE)
 cv2.imshow(WINDOW_TITLE, INACTIVE_SCREEN)
 
+# Initialise video writer
+codec = cv2.VideoWriter_fourcc(*"XVID")
+writer = cv2.VideoWriter(f"{os.getcwd()}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
+
+# TODO: Make this a queue and write frames in a separate thread so the RAM doesn't fill up so quickly
+frame_buffer = [] # Stores the captured frames to be written to disk later
+
 ### Functions ###
 
 def open():
@@ -52,18 +59,30 @@ def open():
     log.info("Opening camera stream")
     global stream
     stream.open(CAMERA_INDEX)
-    # For some reason these introduce a delay when capturing the frame, it seems to work okay without them though
+    # For some reason this introduces a delay when capturing the frame, it seems to work okay without it though
     #stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     stream.set(3, WIDTH)
     stream.set(4, HEIGHT)
     
 def close():
     """
-    Closes the camera stream and releases the resources it was using.
+    Closes the camera stream, saves the video and releases the resources it was using.
     """
     log.info("Closing camera stream")
     global stream
     stream.release()
+    
+    log.info("Writing buffered frames to file")
+    global writer
+    global frame_buffer
+    i = 1
+    for frame in frame_buffer:
+        writer.write(frame)
+        log.debug("Writing frame %i of %i", i, len(frame_buffer))
+        i += 1
+    frame_buffer = []
+    log.info("Closing file")
+    writer.release()
     
 def shutdown():
     """
@@ -81,6 +100,7 @@ def capture_frame():
     global stream
     global raw_frame
     success, raw_frame = stream.read()
+    raw_frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
     if not success:
         log.warn("Failed to retrieve current frame from camera")
 
@@ -124,8 +144,13 @@ def display_current():
     """
     Displays the current frame with annotations
     """
-    #global raw_frame # Using raw frame for debugging purposes
-    #cv2.rectangle(raw_frame, (20, 20), (200, 200), (10, 255, 0), 2)
-    #cv2.imshow(WINDOW_TITLE, raw_frame)
     global annotated_frame
     cv2.imshow(WINDOW_TITLE, annotated_frame)
+    
+def store_current():
+    """
+    Stores the current frame to the video output
+    """
+    global annotated_frame
+    global frame_buffer
+    frame_buffer.append(annotated_frame)

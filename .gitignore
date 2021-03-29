@@ -6,6 +6,7 @@
 # Misc
 logs/
 examples/
+captures/
 get_pi_requirements.sh
 
 # TensorFlow models

@@ -37,7 +37,6 @@ log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
 
 BUZZ_TIME = 10 # Buzzer active time in seconds
 IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
-FRAMERATE = 20 # Target framerate to capture at, in frames per second
 
 # Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
 OBJECT_BLACKLIST = ["cat", "person"]
@@ -92,9 +91,9 @@ def on_power_btn_pressed():
     
     gpio.set_power_led_state(True)
     
+    object_detector.shutdown() # Do this first so we don't waste procssing power
     camera.shutdown()
-    object_detector.shutdown()
-    gpio.shutdown()
+    gpio.shutdown() # Do this last so that the light only turns off once everything else is done
     
     if DEV_MODE:
         sys.exit()
@@ -130,6 +129,7 @@ while state != State.SHUTTING_DOWN:
     # Object whitelist/blacklist logic goes here
     
     camera.annotate_current(boxes, labels, scores)
+    camera.store_current()
     
     if DEV_MODE:
         camera.display_current()
@@ -143,7 +143,7 @@ while state != State.SHUTTING_DOWN:
         i += 1
     
     # Try to keep a stable framerate by waiting for the rest of the time, if any
-    cv2.waitKey(max(1, int(1000 * (1.0/FRAMERATE - (time.perf_counter() - t)))))
+    cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))
     
 # Wait until callbacks and object detection have finished
 # This prevents the main thread (and hence the program) from terminating until all other threads are done
