@@ -10,11 +10,12 @@ Based on the example script TFLite_detection_webcam.py by Evan Juras:
 https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi/blob/master/TFLite_detection_webcam.py
 """
 
-import logging as log
-import os           # Operating system commands
-import time         # Timing functions
-import cv2          # OpenCV functions
-import numpy as np  # Matrix operations
+import logging as log          # Log messages and log file output
+import os                      # Operating system commands
+import time                    # Timing functions
+from datetime import datetime  # Real-world date and time
+import cv2                     # OpenCV functions
+import numpy as np             # Matrix operations
 
 ### Constants ###
 
@@ -23,6 +24,7 @@ WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
 
+TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
 INACTIVE_SCREEN = np.zeros((WIDTH, HEIGHT, 3)) # Just a black screen for now
 
@@ -111,6 +113,9 @@ def annotate_current(boxes, labels, scores):
         label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
         cv2.rectangle(annotated_frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
         cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+
+    # Date and time
+    cv2.putText(annotated_frame, f"{datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOUR, 1, cv2.LINE_AA)
 
     # Draw framerate in corner of frame
     #cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
