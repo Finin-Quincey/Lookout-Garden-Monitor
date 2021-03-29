@@ -27,7 +27,7 @@ REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
 
 ### Setup ###
 
-# Init global variables
+# Initialise module variables
 pir_callback = None
 btn_callback = None
 # Functions to call when forwarding callbacks to the main control script

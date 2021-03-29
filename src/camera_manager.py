@@ -23,11 +23,17 @@ WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
 
+CONFIDENCE_THRESHOLD = 0.6       # Minimum confidence for an object to count as a detection
+
 INACTIVE_SCREEN = np.zeros((WIDTH, HEIGHT, 3)) # Just a black screen for now
 
 ### Setup ###
 
 log.info("Initialising camera")
+
+# Initialise module variables
+raw_frame = INACTIVE_SCREEN
+annotated_frame = INACTIVE_SCREEN
 
 # Initialise camera object
 stream = cv2.VideoCapture()
@@ -47,8 +53,8 @@ def open():
     stream.open(CAMERA_INDEX)
     # For some reason these introduce a delay when capturing the frame, it seems to work okay without them though
     #stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    #stream.set(3, WIDTH)
-    #stream.set(4, HEIGHT)
+    stream.set(3, WIDTH)
+    stream.set(4, HEIGHT)
     
 def close():
     """
@@ -77,7 +83,7 @@ def capture_frame():
     if not success:
         log.warn("Failed to retrieve current frame from camera")
 
-def annotate_current(boxes, classes, scores):
+def annotate_current(boxes, labels, scores):
     """
     Annotates the current frame with labels representing the given detected objects and their locations.
     """
@@ -95,13 +101,13 @@ def annotate_current(boxes, classes, scores):
             # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
             ymin = int(max(1,(boxes[i][0] * HEIGHT)))
             xmin = int(max(1,(boxes[i][1] * WIDTH)))
-            ymax = int(min(imH,(boxes[i][2] * HEIGHT)))
-            xmax = int(min(imW,(boxes[i][3] * WIDTH)))
+            ymax = int(min(HEIGHT,(boxes[i][2] * HEIGHT)))
+            xmax = int(min(WIDTH,(boxes[i][3] * WIDTH)))
             
-            cv2.rectangle(annotated_frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+            cv2.rectangle(annotated_frame, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
 
             # Draw label
-            object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
+            object_name = labels[i] # Look up object name from "labels" array using class index
             label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
             labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
             label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
@@ -118,8 +124,8 @@ def display_current():
     """
     Displays the current frame with annotations
     """
-    global raw_frame # Using raw frame for debugging purposes
-    cv2.rectangle(raw_frame, (20, 20), (200, 200), (10, 255, 0), 2)
-    cv2.imshow(WINDOW_TITLE, raw_frame)
-    #global annotated_frame
-    #cv2.imshow(WINDOW_TITLE, annotated_frame)
+    #global raw_frame # Using raw frame for debugging purposes
+    #cv2.rectangle(raw_frame, (20, 20), (200, 200), (10, 255, 0), 2)
+    #cv2.imshow(WINDOW_TITLE, raw_frame)
+    global annotated_frame
+    cv2.imshow(WINDOW_TITLE, annotated_frame)

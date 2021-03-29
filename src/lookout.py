@@ -53,7 +53,7 @@ class State(Enum):
     ACTIVE        = "Active"        # Currently recording footage
     SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
     
-### Setup ###
+### Initial Setup ###
 
 log.info("*** Lookout started ***")
 
@@ -64,6 +64,7 @@ import gpio_manager as gpio
 gpio.set_power_led_state(True)
 
 import camera_manager as camera
+import object_detector
 
 ### Callbacks ###
 
@@ -99,6 +100,8 @@ def on_power_btn_pressed():
     else:
         os.system("sudo shutdown -h now")
 
+### Finish Setup ###
+
 log.info("Setting up callbacks")
 
 gpio.init_pir_callback(on_pir_activated)
@@ -119,6 +122,14 @@ while state != State.SHUTTING_DOWN:
     
     camera.capture_frame()
     
+    boxes = object_detector.boxes
+    labels = object_detector.labels
+    scores = object_detector.scores
+    
+    # Object whitelist/blacklist logic goes here
+    
+    camera.annotate_current(boxes, labels, scores)
+    
     if DEV_MODE:
         camera.display_current()
     
@@ -133,4 +144,7 @@ while state != State.SHUTTING_DOWN:
     # Try to keep a stable framerate by waiting for the rest of the time, if any
     cv2.waitKey(max(1, int(1000 * (1.0/FRAMERATE - (time.perf_counter() - t)))))
     
-callback_thread.join() # Wait until power button callback has finished
+# Wait until callbacks and object detection have finished
+# This prevents the main thread (and hence the program) from terminating until all other threads are done
+callback_thread.join()
+object_detector.thread.join()
