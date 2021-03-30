@@ -89,7 +89,10 @@ def run():
     time.sleep(1)
     
     while not shutdown_flag:
-        process_next()
+        if(camera.is_capturing()):
+            process_next()
+        else:
+            time.sleep(0.2) # Save processing power when not capturing
         
     log.info("Object detection thread stopping")
 
@@ -98,6 +101,13 @@ thread = Thread(target = run, args = (), name = "Object-detection-thread")
 thread.start()
 
 ### Functions ###
+
+def pause():
+    """
+    Pauses the object detector
+    """
+    global shutdown_flag
+    shutdown_flag = True
 
 def shutdown():
     """

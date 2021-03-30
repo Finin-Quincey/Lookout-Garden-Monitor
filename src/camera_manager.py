@@ -114,6 +114,12 @@ frame_buffer = FrameBuffer(FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
 
 ### Functions ###
 
+def is_capturing():
+    """
+    Returns True if the camera stream is open, False if not.
+    """
+    return stream.isOpened()
+
 def open():
     """
     Opens the camera stream.
