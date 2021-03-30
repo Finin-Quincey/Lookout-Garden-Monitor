@@ -82,7 +82,7 @@ def close():
         i += 1
     frame_buffer = []
     log.info("Closing file")
-    writer.release()
+    #writer.release()
     
 def shutdown():
     """
