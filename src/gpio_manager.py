@@ -20,10 +20,6 @@ BUZZER_PIN       = 4
 IR_LED_PIN_1     = 23
 IR_LED_PIN_2     = 24
 
-# For development purposes we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to
-# resonate at 31kHz so it won't be as loud at other frequencies, and there may be artefacts/aliasing disrupting the tone
-BUZZER_FREQUENCY = 6000 # 6kHz is the minimum rated frequency for the buzzer
-
 REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
 
 ### Setup ###
@@ -94,6 +90,12 @@ def set_ir_led_state(state):
     pi.write(IR_LED_PIN_1, state)
     pi.write(IR_LED_PIN_2, state)
     
+def set_buzzer_frequency(frequency):
+    """
+    Sets the buzzer to the given frequency. Set to 0 to turn the buzzer off.
+    """
+    pi.hardware_clock(BUZZER_PIN, frequency)
+    
 def shutdown():
     """
     Resets all output pins to their 'off' states, cleans up callbacks, and so on.
@@ -112,6 +114,7 @@ def shutdown():
     enable_pir_sensor(False)
     set_power_led_state(False)
     set_ir_led_state(False)
+    set_buzzer_frequency(0)
     
     pir_callback.cancel()
     btn_callback.cancel()

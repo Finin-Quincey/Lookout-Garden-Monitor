@@ -27,7 +27,7 @@ WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer
 FRAMERATE     = 20               # Target framerate to capture at, in frames per second
 TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
-INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3)) # Just a black screen for now (only used in dev mode)
+INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3), dtype = "uint8") # Just a black screen for now (only used in dev mode)
 
 # Maximum number of frames the buffer can hold; prevents overloading the RAM
 FRAME_BUFFER_SIZE = 150
@@ -228,6 +228,9 @@ def annotate_current(boxes, labels, scores):
     """
     Annotates the current frame with labels representing the given detected objects and their locations.
     """
+    
+    if raw_frame is None: return # If there is no raw frame for some reason, just do nothing
+    
     # Take a copy of the raw frame
     # We need to take care not to modify the raw frame because we can't guarantee when the object detector thread will
     # access it, and we don't want it performing object detection on the annotated frame
