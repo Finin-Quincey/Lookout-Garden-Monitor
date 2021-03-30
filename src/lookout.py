@@ -130,7 +130,8 @@ while state != State.SHUTTING_DOWN:
     # Object whitelist/blacklist logic goes here
     
     camera.annotate_current(boxes, labels, scores)
-    camera.store_current()
+    if not camera.store_current():
+        camera.close() # Stop recording if the buffer is full
     
     if DEV_MODE:
         camera.display_current()
