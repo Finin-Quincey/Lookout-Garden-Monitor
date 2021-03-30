@@ -29,7 +29,7 @@ TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3)) # Just a black screen for now (only used in dev mode)
 
 # Maximum number of frames the buffer can hold; prevents overloading the RAM
-FRAME_BUFFER_SIZE = 100
+FRAME_BUFFER_SIZE = 150
 
 ### Classes ###
 
