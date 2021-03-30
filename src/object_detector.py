@@ -102,17 +102,11 @@ thread.start()
 
 ### Functions ###
 
-def pause():
-    """
-    Pauses the object detector
-    """
-    global shutdown_flag
-    shutdown_flag = True
-
 def shutdown():
     """
     Marks the object detector to shut down after the current cycle is finished
     """
+    log.info("Marking object detector for shutdown")
     global shutdown_flag
     shutdown_flag = True
 
