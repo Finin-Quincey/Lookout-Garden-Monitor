@@ -61,6 +61,7 @@ state = State.INACTIVE
 
 import gpio_manager as gpio
 gpio.set_power_led_state(True)
+gpio.enable_pir_sensor(True)
 
 import camera_manager as camera
 import object_detector

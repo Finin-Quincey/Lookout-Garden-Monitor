@@ -13,14 +13,15 @@ import pigpio as gpio # GPIO control library
 
 # N.B. This is the BCM pin numbering scheme
 PIR_SENSOR_PIN   = 10
+PIR_ENABLE_PIN   = 9
 POWER_BUTTON_PIN = 3
 POWER_LED_PIN    = 22
 BUZZER_PIN       = 4
 IR_LED_PIN_1     = 23
 IR_LED_PIN_2     = 24
 
-# Here we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to resonate at 31kHz
-# so it won't be as loud at other frequencies, and there may also be artefacts/aliasing disrupting the tone
+# For development purposes we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to
+# resonate at 31kHz so it won't be as loud at other frequencies, and there may be artefacts/aliasing disrupting the tone
 BUZZER_FREQUENCY = 6000 # 6kHz is the minimum rated frequency for the buzzer
 
 REFRESH_RATE = 20 # Number of times per second to update the gpio outputs
@@ -41,6 +42,7 @@ log.info("Initialising GPIO pins")
 pi = gpio.pi() # Init GPIO object
 
 pi.set_mode(PIR_SENSOR_PIN,   gpio.INPUT)
+pi.set_mode(PIR_ENABLE_PIN,   gpio.OUTPUT)
 pi.set_mode(POWER_BUTTON_PIN, gpio.INPUT)
 pi.set_mode(POWER_LED_PIN,    gpio.OUTPUT)
 pi.set_mode(BUZZER_PIN,       gpio.ALT0) # ALT0 is GPCLK for pin 4 (see https://pinout.xyz for a list of ALT functions for each pin)
@@ -53,11 +55,22 @@ pi.set_pull_up_down(POWER_BUTTON_PIN, gpio.PUD_UP) # Power button is active low
 
 def get_pir_state():
     """
-    Returns the state of the PIR sensor pin. A value of 1 means the PIR is active; a value of 0 means it is inactive.
+    Returns the state of the PIR sensor pin. A value of 1 means the PIR is active; a value of 0 means it is inactive or
+    disabled.
     """
     result = pi.read(PIR_SENSOR_PIN)
     log.debug("Read PIR pin (GPIO %i), level is %s", PIR_SENSOR_PIN, "HIGH" if result else "LOW")
     return result
+
+def enable_pir_sensor(enable):
+    """
+    Enables or disables the PIR sensor.
+    
+    Parameters:
+    - enable: True to enable the PIR sensor, False to disable it.
+    """
+    log.debug("Setting PIR enable pin (GPIO %i) to output %s", PIR_ENABLE_PIN, "HIGH" if enable else "LOW")
+    pi.write(PIR_ENABLE_PIN, enable)
 
 def set_power_led_state(state):
     """
@@ -96,6 +109,7 @@ def shutdown():
     # For now we need to turn this off for shutdown or it will stay on, at some point I may look into ways of turning it
     # off later on in the shutdown sequence but it doesn't really matter that much - the main thing is that it stays on
     # while the video is saving
+    enable_pir_sensor(False)
     set_power_led_state(False)
     set_ir_led_state(False)
     
