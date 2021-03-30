@@ -16,6 +16,7 @@ import time                    # Timing functions
 from datetime import datetime  # Real-world date and time
 import cv2                     # OpenCV functions
 import numpy as np             # Matrix operations
+from threading import Thread   # Concurrency
 
 ### Constants ###
 
@@ -90,7 +91,60 @@ class FrameBuffer():
         self.array[self.read_index] = 0 # Wipe the first position in the queue
         self.read_index = (self.read_index + 1) % (self.max_size + 1) # Increment reader index or loop back round to 0
         return frame
+
+class CaptureWriter():
+    """
+    Controls the video saving process and video write thread.
+    """
+    
+    def __init__(self, frame_buffer):
+        """
+        Creates a new capture writer and starts the write thread.
+        """
+        self.thread = Thread(target = self.run, args = (), name = "Video-write-thread")
+        self.shutdown_flag = False
+        self.frame_buffer = frame_buffer
+        self.writer = None
+        self.close_flag = False
+        self.thread.start()
         
+    def new_file(self):
+        """
+        Creates a new video file to write to, with the current date and time as its filename.
+        """
+        self.writer = cv2.VideoWriter(f"{os.getcwd()}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
+        
+    def close_file(self):
+        """
+        Closes the video file once all buffered frames have been written.
+        """
+        log.debug("Marking current writer file for closing")
+        self.close_flag = True
+        
+    def shutdown(self):
+        """
+        Causes the calling thread to wait until the current capture has finished being written, then stops the write thread.
+        """
+        log.info("Marking video writer for shutdown")
+        self.shutdown_flag = True
+        self.thread.join()
+        
+    def run(self):
+        
+        log.debug("Video write thread started")
+        
+        while not self.shutdown_flag:
+            if not self.frame_buffer.is_empty() and self.writer is not None:
+                self.writer.write(self.frame_buffer.pop())
+            else:
+                if self.close_flag:
+                    log.info("Closing video file")
+                    self.writer = None # Allow the garbage collector to release the writer resources itself
+                    self.close_flag = False
+                time.sleep(0.2) # Save processing power when not doing anything
+            
+        log.debug("Video write thread stopping")
+
 ### Setup ###
 
 log.info("Initialising camera")
@@ -112,6 +166,9 @@ codec = cv2.VideoWriter_fourcc(*"XVID")
 # Stores the captured frames to be written to disk later
 frame_buffer = FrameBuffer(FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
 
+# Initialise writer thread
+writer = CaptureWriter(frame_buffer)
+
 ### Functions ###
 
 def is_capturing():
@@ -126,33 +183,24 @@ def open():
     """
     log.info("Opening camera stream")
     global stream
+    global writer
     stream.open(CAMERA_INDEX)
     # For some reason this introduces a delay when capturing the frame, it seems to work okay without it though
     #stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     stream.set(3, WIDTH)
     stream.set(4, HEIGHT)
+    writer.new_file()
     
 def close():
     """
-    Closes the camera stream, saves the video and releases the resources it was using.
+    Closes the camera stream, finishes saving the video and releases the resources it was using.
     """
     log.info("Closing camera stream")
     global stream
     stream.release()
     
-    log.info("Writing buffered frames to file")
-    
-    writer = cv2.VideoWriter(f"{os.getcwd()}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
-
-    global frame_buffer
-    i = 1
-    while not frame_buffer.is_empty():
-        frame = frame_buffer.pop()
-        writer.write(frame)
-        log.debug("Writing frame %i", i)
-        i += 1
-    #log.info("Closing file")
-    #writer.release()
+    global writer
+    writer.close_file()
     
 def shutdown():
     """
@@ -161,6 +209,8 @@ def shutdown():
     log.info("Closing open windows")
     cv2.destroyAllWindows()
     close()
+    global writer
+    writer.shutdown()
     cv2.waitKey(1) # Required to get opencv to update (must be last it seems)
 
 def capture_frame():
