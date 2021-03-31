@@ -77,6 +77,10 @@ gpio.enable_pir_sensor(True)
 import camera_manager as camera
 import object_detector
 
+if DEV_MODE:
+    camera.display_current() # Show blank screen
+    cv2.waitKey(2) # For some reason it needs 2ms
+
 ### Functions ###
 
 def on_pir_activated():
