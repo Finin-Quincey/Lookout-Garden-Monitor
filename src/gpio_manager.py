@@ -150,8 +150,8 @@ def init_btn_callback(func):
     global btn_cb_forward
     global pi
     btn_cb_forward = func
-    # Still using rising edge here because it's normal for buttons to respond when released, not when pressed
-    btn_callback = pi.callback(POWER_BUTTON_PIN, gpio.RISING_EDGE, btn_pin_callback)
+    # Using either edge so we can keep track of how long the button was pressed for
+    btn_callback = pi.callback(POWER_BUTTON_PIN, gpio.EITHER_EDGE, btn_pin_callback)
 
 def pir_pin_callback(pin, level, tick):
     log.debug("PIR sensor callback triggered (GPIO %i)", pin)
@@ -162,7 +162,7 @@ def pir_pin_callback(pin, level, tick):
     
 def btn_pin_callback(pin, level, tick):
     log.debug("Power button callback triggered (GPIO %i)", pin)
-    if level != 1:
+    if level > 1:
         log.warn("Unexpected callback value on GPIO %i: %i (probably a timeout)", pin, level)
         return # Sanity check: ignore if it wasn't a rising edge (only happens on timeout)
-    btn_cb_forward() # Pass control flow up to the main lookout class
+    btn_cb_forward(level == 1) # Pass control flow up to the main lookout class

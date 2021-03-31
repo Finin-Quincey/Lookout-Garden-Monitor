@@ -224,7 +224,7 @@ def capture_frame():
     success, raw_frame = stream.read()
     raw_frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
     if not success:
-        log.warn("Failed to retrieve current frame from camera")
+        log.warning("Failed to retrieve current frame from camera")
 
 def annotate_current(boxes, labels, scores):
     """

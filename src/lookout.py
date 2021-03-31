@@ -22,6 +22,7 @@ import logging as log          # Log messages and log file output
 from enum import Enum          # Enumeration types
 import cv2
 import threading
+import signal
 
 SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1.9 GB Volume/Lookout"
 
@@ -43,6 +44,7 @@ BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequ
 
 BUZZ_TIME = 10 # Buzzer active time in seconds
 IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
+FORCE_SHUTDOWN_TIME = 5 # If the power button is held for longer than this many seconds, it forces a shutdown
 
 # Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
 OBJECT_BLACKLIST = ["cat", "person", "dog"]
@@ -66,6 +68,7 @@ log.info("*** Lookout started ***")
 state = State.INACTIVE
 idle_timer = 0
 buzzer_timer = 0
+btn_hold_timer = 0
 
 # Initialise other modules
 import gpio_manager as gpio
@@ -84,16 +87,34 @@ def on_pir_activated():
     global state
     state = State.ACTIVE
     
-def on_power_btn_pressed():
+def on_power_btn_pressed(released):
     """
-    Called from the GPIO manager when the power button is pressed.
+    Called from the GPIO manager when the power button is pressed or released.
     """
-    log.info("Shutting down...")
+    global btn_hold_timer
     
-    global state
-    state = State.SHUTTING_DOWN
+    if released:
+        
+        if btn_hold_timer != 0 and time.perf_counter() - btn_hold_timer > FORCE_SHUTDOWN_TIME:
+            
+            log.warning("Forcing shutdown! Capture data may be lost!")
+            
+            if DEV_MODE:
+                os.kill(os.getpid(), signal.SIGINT) # sys.exit() won't work here
+            else:
+                os.system("sudo shutdown -h now")
+            
+        else:
     
-    gpio.set_power_led_state(True)
+            log.info("Shutting down...")
+            
+            global state
+            state = State.SHUTTING_DOWN
+            
+            gpio.set_power_led_state(True)
+        
+    else:
+        btn_hold_timer = time.perf_counter() # Start hold timer
 
 def capture_video():
     """
