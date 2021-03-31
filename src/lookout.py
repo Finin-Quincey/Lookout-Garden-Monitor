@@ -43,7 +43,7 @@ log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
 BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequency for the buzzer
 
 BUZZ_TIME = 10 # Buzzer active time in seconds
-IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
+IDLE_TIME = 20 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
 FORCE_SHUTDOWN_TIME = 5 # If the power button is held for longer than this many seconds, it forces a shutdown
 
 # Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
