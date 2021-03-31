@@ -29,6 +29,9 @@ GRAPH_NAME           = "detect.tflite"               # Name of the graph (.tflit
 LABELMAP_NAME        = "labelmap.txt"                # Name of the label map (.txt) file in the above directory
 CONFIDENCE_THRESHOLD = 0.6                           # Minimum confidence for an object to count as a detection
 
+# All objects not in this list will be filtered out
+VALID_OBJECTS = ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"]
+
 # Derived values
 CWD_PATH       = os.getcwd()                                      # Path to current working directory
 PATH_TO_CKPT   = os.path.join(CWD_PATH,MODEL_NAME,GRAPH_NAME)     # Path to .tflite file
@@ -140,7 +143,6 @@ def process_next():
     classes = interpreter.get_tensor(output_details[1]['index'])[0] # Class index of detected objects
     labels = np.array(label_map)[classes.astype(int)] # Convert classes to labels
     scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
-    #num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
 
     # Remove results that are below the confidence threshold
     idx = scores > CONFIDENCE_THRESHOLD
@@ -148,6 +150,10 @@ def process_next():
     labels = labels[idx]
     scores = scores[idx]
     
+    # Remove results that are not in the list of valid objects
+    idx = [label in VALID_OBJECTS for label in labels]
+    boxes = boxes[idx]
+    labels = labels[idx]
+    scores = scores[idx]
+    
     log.debug("Detected %i objects", labels.size)
-
-    # TODO: Move confidence threshold code in here to remove detections below the threshold before storing them
