@@ -62,15 +62,17 @@ log.info("*** Lookout started ***")
 
 # Global variables
 state = State.INACTIVE
+idle_timer = 0
+buzzer_timer = 0
 
+# Initialise other modules
 import gpio_manager as gpio
 gpio.set_power_led_state(True)
 gpio.enable_pir_sensor(True)
-
 import camera_manager as camera
 import object_detector
 
-### Callbacks ###
+### Functions ###
 
 def on_pir_activated():
     """
@@ -87,15 +89,75 @@ def on_power_btn_pressed():
     log.info("Shutting down...")
     
     global state
-    global callback_thread
     state = State.SHUTTING_DOWN
-    callback_thread = threading.current_thread()
     
     gpio.set_power_led_state(True)
+
+def capture_video():
+    """
+    Captures a video from the camera until no objects are present any more (or until the buffer is full), performing object
+    detection and controlling the buzzer accordingly.
     
-    object_detector.shutdown() # Do this first so we don't waste procssing power
-    camera.shutdown()
-    gpio.shutdown() # Do this last so that the light only turns off once everything else is done
+    Returns:
+    - True if the device should go back to sleep, False if it should shut down
+    """
+    
+    global idle_timer
+    global buzzer_timer
+
+    i = 0
+    
+    while True: # Capture until one of the return statements below is reached
+        
+        t = time.perf_counter()
+        
+        camera.capture_frame()
+        
+        boxes = object_detector.boxes
+        labels = object_detector.labels
+        scores = object_detector.scores
+        
+        if len(labels) > 0: # If we found something
+    
+            idle_timer = time.perf_counter() # Reset idle timer
+            
+            # Check objects against blacklist/whitelist
+            if any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
+                # Activate the buzzer and start the timer
+                if buzzer_timer == 0: gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
+                buzzer_timer = time.perf_counter()
+                
+        if buzzer_timer != 0 and time.perf_counter() - buzzer_timer >= BUZZ_TIME: # If buzzer time has elapsed
+            # Deactivate the buzzer and reset the timer
+            gpio.set_buzzer_frequency(0)
+            buzzer_timer = 0
+        
+        camera.annotate_current(boxes, labels, scores)
+        
+        if DEV_MODE:
+            camera.display_current()
+        
+        if not camera.store_current(): # Stop recording if the buffer is full
+            log.info("Buffer full, stopping current recording")
+            return True
+            
+        if time.perf_counter() - idle_timer >= IDLE_TIME: # If idle time has elapsed
+            return True
+        
+        if state == State.SHUTTING_DOWN:
+            return False
+        
+        # LED flashing
+        if i == 20:
+            gpio.set_power_led_state(True)
+            i = 0
+        else:
+            if i == 0:
+                gpio.set_power_led_state(False)
+            i += 1
+        
+        # Try to keep a stable framerate by waiting for the rest of the time, if any
+        cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))
 
 ### Finish Setup ###
 
@@ -108,8 +170,6 @@ gpio.set_power_led_state(False)
 
 log.info("Setup done")
 
-i = 0
-
 ### Main Logic Loop ###
 
 while state != State.SHUTTING_DOWN: # Keep doing this until the program shuts down
@@ -117,72 +177,30 @@ while state != State.SHUTTING_DOWN: # Keep doing this until the program shuts do
     if state == State.ACTIVE:
         
         idle_timer = time.perf_counter() # Start idle timer
-        buzzer_timer = 0
         
         gpio.set_ir_led_state(True)
         camera.open() # Do this as close to first capture as possible to minimise delay
     
-        while True: # Capture loop
-            
-            t = time.perf_counter()
-            
-            camera.capture_frame()
-            
-            boxes = object_detector.boxes
-            labels = object_detector.labels
-            scores = object_detector.scores
-            
-            if len(labels) > 0: # If we found something
-        
-                idle_timer = time.perf_counter() # Reset idle timer
-                
-                # Check objects against blacklist/whitelist
-                if any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
-                    # Activate the buzzer and start the timer
-                    if buzzer_timer == 0: gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
-                    buzzer_timer = time.perf_counter()
-                    
-            if buzzer_timer != 0 and time.perf_counter() - buzzer_timer >= BUZZ_TIME: # If buzzer time has elapsed
-                # Deactivate the buzzer and reset the timer
-                gpio.set_buzzer_frequency(0)
-                buzzer_timer = 0
-            
-            camera.annotate_current(boxes, labels, scores)
-            
-            if DEV_MODE:
-                camera.display_current()
-            
-            if not camera.store_current(): # Stop recording if the buffer is full
-                log.info("Buffer full, stopping current recording")
-                break
-                
-            if time.perf_counter() - idle_timer >= IDLE_TIME: # If idle time has elapsed
-                break
-            
-            # LED flashing
-            if i == 20:
-                gpio.set_power_led_state(True)
-                i = 0
-            else:
-                if i == 0:
-                    gpio.set_power_led_state(False)
-                i += 1
-            
-            # Try to keep a stable framerate by waiting for the rest of the time, if any
-            cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))
-            
-        log.debug("Going back to sleep, goodnight")
-        state = state.INACTIVE
-        camera.close()
-        gpio.set_buzzer_frequency(0)
-        gpio.set_ir_led_state(False)
+        if capture_video():
+            # capture_video() returned True so go back to sleep
+            log.debug("Going back to sleep, goodnight")
+            state = state.INACTIVE
+            camera.close()
+            gpio.set_buzzer_frequency(0)
+            gpio.set_ir_led_state(False)
         
     time.sleep(0.2) # Save processing power when not doing anything
-    
-# Wait until callbacks and object detection have finished
-# This prevents the main thread (and hence the program) from terminating until all other threads are done
-callback_thread.join()
-object_detector.thread.join()
+
+### Shutdown ###
+
+# Shut down modules and wait for other processes to finish
+gpio.prepare_shutdown() # Cancel callbacks first
+object_detector.shutdown() # Start shutdown of object detector
+camera.shutdown() # Wait for camera to shut down
+object_detector.thread.join() # Wait until object detector has finished (it probably has already, but just in case)
+
+# Finally, turn off the power LED and close the GPIO connection once everything is done
+gpio.finish_shutdown()
 
 log.info("*** Exiting program ***")
     

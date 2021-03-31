@@ -96,9 +96,9 @@ def set_buzzer_frequency(frequency):
     """
     pi.hardware_clock(BUZZER_PIN, frequency)
     
-def shutdown():
+def prepare_shutdown():
     """
-    Resets all output pins to their 'off' states, cleans up callbacks, and so on.
+    Resets all output pins to their 'off' states (except the power LED), cleans up callbacks, and so on.
     """
     # Chances are none of this is necessary as we're shutting the pi down anyway, but there's no harm in doing it anyway
     
@@ -112,13 +112,17 @@ def shutdown():
     # off later on in the shutdown sequence but it doesn't really matter that much - the main thing is that it stays on
     # while the video is saving
     enable_pir_sensor(False)
-    set_power_led_state(False)
     set_ir_led_state(False)
     set_buzzer_frequency(0)
     
     pir_callback.cancel()
     btn_callback.cancel()
     
+def finish_shutdown():
+    """
+    Turns off the power LED and closes the GPIO connection.
+    """
+    set_power_led_state(False)
     pi.stop()
     
 ### Callbacks ###

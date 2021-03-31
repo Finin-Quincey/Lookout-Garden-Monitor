@@ -24,7 +24,7 @@ CAMERA_INDEX  = 0                # Index of the camera to use (there is only one
 WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
-FRAMERATE     = 20               # Target framerate to capture at, in frames per second
+FRAMERATE     = 12               # Target framerate to capture at, in frames per second
 TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
 INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3), dtype = "uint8") # Just a black screen for now (only used in dev mode)
@@ -134,14 +134,16 @@ class CaptureWriter():
         log.debug("Video write thread started")
         
         while not self.shutdown_flag:
-            if not self.frame_buffer.is_empty() and self.writer is not None:
+            
+            while not self.frame_buffer.is_empty() and self.writer is not None:
                 self.writer.write(self.frame_buffer.pop())
-            else:
-                if self.close_flag:
-                    log.info("Closing video file")
-                    self.writer = None # Allow the garbage collector to release the writer resources itself
-                    self.close_flag = False
-                time.sleep(0.2) # Save processing power when not doing anything
+            
+            if self.close_flag:
+                log.info("Closing video file")
+                self.writer = None # Allow the garbage collector to release the writer resources itself
+                self.close_flag = False
+                
+            time.sleep(0.2) # Save processing power when not doing anything
             
         log.debug("Video write thread stopping")
 
@@ -209,9 +211,9 @@ def shutdown():
     log.info("Closing open windows")
     cv2.destroyAllWindows()
     close()
+    cv2.waitKey(1) # Required to get opencv to update
     global writer
-    writer.shutdown()
-    cv2.waitKey(1) # Required to get opencv to update (must be last it seems)
+    writer.shutdown() # Wait for video writer to shut down
 
 def capture_frame():
     """
