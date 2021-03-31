@@ -45,9 +45,9 @@ BUZZ_TIME = 10 # Buzzer active time in seconds
 IDLE_TIME = 30 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
 
 # Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
-OBJECT_BLACKLIST = ["cat", "person"]
+OBJECT_BLACKLIST = ["cat", "person", "dog"]
 # Objects in this list will prevent the buzzer from triggering (disarm it) if present
-OBJECT_WHITELIST = ["bat", "scissors"]
+OBJECT_WHITELIST = ["scissors"]
 
 # N.B. Because we're using a callback approach here, we can't just have a shutdown method, we also need a way of
 # preventing any callbacks from executing. The only way of doing this is to have the callback exit early when the state
