@@ -237,4 +237,4 @@ log.info("*** Exiting program ***")
 if DEV_MODE:
     sys.exit()
 else:
-    os.system("sudo shutdown -h now")
+    os.system("poweroff")
