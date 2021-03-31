@@ -139,7 +139,7 @@ while state != State.SHUTTING_DOWN: # Keep doing this until the program shuts do
                 # Check objects against blacklist/whitelist
                 if any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
                     # Activate the buzzer and start the timer
-                    gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
+                    if buzzer_timer == 0: gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
                     buzzer_timer = time.perf_counter()
                     
             if buzzer_timer != 0 and time.perf_counter() - buzzer_timer >= BUZZ_TIME: # If buzzer time has elapsed
