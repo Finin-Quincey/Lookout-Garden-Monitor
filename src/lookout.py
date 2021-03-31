@@ -14,8 +14,6 @@ Author: Finin Quincey
 # - When the power button is pressed, the program exits rather than shutting down the pi
 DEV_MODE = True
 
-SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1.9 GB Volume/Lookout"
-
 import os                      # Operating system commands
 import sys                     # Python system commands
 import time                    # Timing functions
@@ -24,6 +22,8 @@ import logging as log          # Log messages and log file output
 from enum import Enum          # Enumeration types
 import cv2
 import threading
+
+SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1.9 GB Volume/Lookout"
 
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
