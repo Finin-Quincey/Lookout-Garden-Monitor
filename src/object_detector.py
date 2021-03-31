@@ -24,18 +24,17 @@ import camera_manager as camera
 
 ### Constants ###
 
-MODEL_NAME           = "models/Sample_TFLite_model"  # Path to the model directory
-GRAPH_NAME           = "detect.tflite"               # Name of the graph (.tflite) file in the above directory
-LABELMAP_NAME        = "labelmap.txt"                # Name of the label map (.txt) file in the above directory
-CONFIDENCE_THRESHOLD = 0.6                           # Minimum confidence for an object to count as a detection
+MODEL_NAME           = "/home/pi/tflite/models/Sample_TFLite_model"  # Path to the model directory
+GRAPH_NAME           = "detect.tflite"  # Name of the graph (.tflite) file in the above directory
+LABELMAP_NAME        = "labelmap.txt"   # Name of the label map (.txt) file in the above directory
+CONFIDENCE_THRESHOLD = 0.6              # Minimum confidence for an object to count as a detection
 
 # All objects not in this list will be filtered out
 VALID_OBJECTS = ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"]
 
 # Derived values
-CWD_PATH       = os.getcwd()                                      # Path to current working directory
-PATH_TO_CKPT   = os.path.join(CWD_PATH,MODEL_NAME,GRAPH_NAME)     # Path to .tflite file
-PATH_TO_LABELS = os.path.join(CWD_PATH,MODEL_NAME,LABELMAP_NAME)  # Path to label map file
+PATH_TO_CKPT   = os.path.join(MODEL_NAME,GRAPH_NAME)     # Path to .tflite file
+PATH_TO_LABELS = os.path.join(MODEL_NAME,LABELMAP_NAME)  # Path to label map file
 
 ### Setup ###
 

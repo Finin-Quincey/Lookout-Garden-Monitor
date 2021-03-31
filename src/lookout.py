@@ -24,7 +24,7 @@ import cv2
 import threading
 import signal
 
-SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1.9 GB Volume/Lookout"
+SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1234-5678/Lookout"
 
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
@@ -87,7 +87,7 @@ def on_pir_activated():
     """
     Called from the GPIO manager when the PIR sensor activates.
     """
-    log.debug("PIR sensor activated")
+    log.info("PIR sensor activated")
     global state
     state = State.ACTIVE
     
