@@ -24,7 +24,7 @@ CAMERA_INDEX  = 0                # Index of the camera to use (there is only one
 WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
-FRAMERATE     = 12               # Target framerate to capture at, in frames per second
+FRAMERATE     = 10               # Target framerate to capture at, in frames per second
 TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
 INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3), dtype = "uint8") # Just a black screen for now (only used in dev mode)
