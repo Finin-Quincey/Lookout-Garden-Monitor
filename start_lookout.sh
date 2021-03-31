@@ -1,3 +1,5 @@
+#!/bin/bash
+
 activate(){
   . /home/pi/tflite/tflite-env/bin/activate
 }
