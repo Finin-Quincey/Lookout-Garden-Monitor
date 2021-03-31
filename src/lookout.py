@@ -12,7 +12,7 @@ Author: Finin Quincey
 # - The annotated camera feed is displayed on-screen
 # - Logging is set to DEBUG level instead of INFO so that DEBUG messages are logged as well
 # - When the power button is pressed, the program exits rather than shutting down the pi
-DEV_MODE = True
+DEV_MODE = False
 
 import os                      # Operating system commands
 import sys                     # Python system commands
