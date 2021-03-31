@@ -129,6 +129,7 @@ def capture_video():
     global buzzer_timer
 
     i = 0
+    measured_framerate = 0
     
     while True: # Capture until one of the return statements below is reached
         
@@ -155,7 +156,7 @@ def capture_video():
             gpio.set_buzzer_frequency(0)
             buzzer_timer = 0
         
-        camera.annotate_current(boxes, labels, scores)
+        camera.annotate_current(boxes, labels, scores, measured_framerate, buzzer_timer != 0)
         
         if DEV_MODE:
             camera.display_current()
@@ -178,6 +179,8 @@ def capture_video():
             if i == 0:
                 gpio.set_power_led_state(False)
             i += 1
+        
+        measured_framerate = round(1/(time.perf_counter() - t))
         
         # Try to keep a stable framerate by waiting for the rest of the time, if any
         cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))

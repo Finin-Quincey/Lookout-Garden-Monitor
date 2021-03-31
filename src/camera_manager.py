@@ -226,7 +226,7 @@ def capture_frame():
     if not success:
         log.warning("Failed to retrieve current frame from camera")
 
-def annotate_current(boxes, labels, scores):
+def annotate_current(boxes, labels, scores, fps, buzzer_active):
     """
     Annotates the current frame with labels representing the given detected objects and their locations.
     """
@@ -260,11 +260,8 @@ def annotate_current(boxes, labels, scores):
         cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
 
     # Date and time
-    cv2.putText(annotated_frame, f"{datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')}", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOUR, 1, cv2.LINE_AA)
+    cv2.putText(annotated_frame, f"{datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')}   {fps} fps   Buzzer {'active' if buzzer_active else 'inactive'}", (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOUR, 1, cv2.LINE_AA)
 
-    # Draw framerate in corner of frame
-    #cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,50),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
-    
 def display_current():
     """
     Displays the current frame with annotations
