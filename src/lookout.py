@@ -184,7 +184,7 @@ def capture_video():
                 gpio.set_power_led_state(False)
             i += 1
         
-        measured_framerate = round(1/(time.perf_counter() - t))
+        measured_framerate = min(camera.FRAMERATE, round(1/(time.perf_counter() - t), 1))
         
         # Try to keep a stable framerate by waiting for the rest of the time, if any
         cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))
