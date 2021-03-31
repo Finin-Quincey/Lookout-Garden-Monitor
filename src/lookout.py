@@ -14,6 +14,8 @@ Author: Finin Quincey
 # - When the power button is pressed, the program exits rather than shutting down the pi
 DEV_MODE = True
 
+SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1.9 GB Volume/Lookout"
+
 import os                      # Operating system commands
 import sys                     # Python system commands
 import time                    # Timing functions
@@ -29,7 +31,7 @@ log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
                 level = log.DEBUG if DEV_MODE else log.INFO,
                 handlers = [
                     # Print to console and write to a log file
-                    log.FileHandler(f"{os.getcwd()}/logs/{datetime.now().strftime('%Y-%m-%d_%H%M')}.log"),
+                    log.FileHandler(f"{SAVE_DIRECTORY}/logs/{datetime.now().strftime('%Y-%m-%d_%H%M')}.log"),
                     log.StreamHandler()
                 ])
 
@@ -179,7 +181,7 @@ while state != State.SHUTTING_DOWN: # Keep doing this until the program shuts do
         idle_timer = time.perf_counter() # Start idle timer
         
         gpio.set_ir_led_state(True)
-        camera.open() # Do this as close to first capture as possible to minimise delay
+        camera.open(SAVE_DIRECTORY) # Do this as close to first capture as possible to minimise delay
     
         if capture_video():
             # capture_video() returned True so go back to sleep

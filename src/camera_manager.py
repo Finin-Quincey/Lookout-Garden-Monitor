@@ -108,11 +108,11 @@ class CaptureWriter():
         self.close_flag = False
         self.thread.start()
         
-    def new_file(self):
+    def new_file(self, save_directory):
         """
         Creates a new video file to write to, with the current date and time as its filename.
         """
-        self.writer = cv2.VideoWriter(f"{os.getcwd()}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
+        self.writer = cv2.VideoWriter(f"{save_directory}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
         
     def close_file(self):
         """
@@ -179,7 +179,7 @@ def is_capturing():
     """
     return stream.isOpened()
 
-def open():
+def open(save_directory):
     """
     Opens the camera stream.
     """
@@ -191,7 +191,7 @@ def open():
     #stream.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     stream.set(3, WIDTH)
     stream.set(4, HEIGHT)
-    writer.new_file()
+    writer.new_file(save_directory)
     
 def close():
     """
