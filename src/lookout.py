@@ -12,6 +12,7 @@ Author: Finin Quincey
 # - The annotated camera feed is displayed on-screen
 # - Logging is set to DEBUG level instead of INFO so that DEBUG messages are logged as well
 # - When the power button is pressed, the program exits rather than shutting down the pi
+# - The directory used to save and load files is set to the Python working directory instead of the USB drive
 DEV_MODE = False
 
 import os                      # Operating system commands
@@ -20,11 +21,43 @@ import time                    # Timing functions
 from datetime import datetime  # Real-world date and time
 import logging as log          # Log messages and log file output
 from enum import Enum          # Enumeration types
-import cv2
-import threading
-import signal
+import cv2                     # OpenCV for image processing
+import threading               # Concurrency
+import signal                  # System exit signals
+import json                    # JSON file parsing
+
+### Constants ###
 
 SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1234-5678/Lookout"
+
+FORCE_SHUTDOWN_TIME = 5 # If the power button is held for longer than this many seconds, it forces a shutdown
+
+# N.B. Because we're using a callback approach here, we can't just have a shutdown method, we also need a way of
+# preventing any callbacks from executing. The only way of doing this is to have the callback exit early when the state
+# changes to shutting down. (Also, a state pattern would probably be overkill here, this is Python not Java!)
+class State(Enum):
+    """Enum representing the different states the program can be in"""
+    INACTIVE      = "Inactive"      # Waiting to be triggered via the PIR sensor
+    ACTIVE        = "Active"        # Currently recording footage
+    SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
+    
+# Default Values
+
+ENABLE_BUZZER = True
+
+# For development purposes we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to
+# resonate at 31kHz so it won't be as loud at other frequencies, and there may be artefacts/aliasing disrupting the tone
+BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequency for the buzzer
+
+BUZZ_TIME = 10 # Buzzer active time in seconds
+IDLE_TIME = 20 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
+
+# Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
+OBJECT_BLACKLIST = ["cat", "person", "dog"]
+# Objects in this list will prevent the buzzer from triggering (disarm it) if present
+OBJECT_WHITELIST = ["scissors"]
+    
+### Initial Setup ###
 
 # Must set up logger before importing our own modules or it won't work properly
 log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
@@ -36,33 +69,26 @@ log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
                     log.StreamHandler()
                 ])
 
-### Constants ###
-
-# For development purposes we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to
-# resonate at 31kHz so it won't be as loud at other frequencies, and there may be artefacts/aliasing disrupting the tone
-BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequency for the buzzer
-
-BUZZ_TIME = 10 # Buzzer active time in seconds
-IDLE_TIME = 20 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
-FORCE_SHUTDOWN_TIME = 5 # If the power button is held for longer than this many seconds, it forces a shutdown
-
-# Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
-OBJECT_BLACKLIST = ["cat", "person", "dog"]
-# Objects in this list will prevent the buzzer from triggering (disarm it) if present
-OBJECT_WHITELIST = ["scissors"]
-
-# N.B. Because we're using a callback approach here, we can't just have a shutdown method, we also need a way of
-# preventing any callbacks from executing. The only way of doing this is to have the callback exit early when the state
-# changes to shutting down. (Also, a state pattern would probably be overkill here, this is Python not Java!)
-class State(Enum):
-    """Enum representing the different states the program can be in"""
-    INACTIVE      = "Inactive"      # Waiting to be triggered via the PIR sensor
-    ACTIVE        = "Active"        # Currently recording footage
-    SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
-    
-### Initial Setup ###
-
 log.info("*** Lookout started ***")
+
+# Read config file
+try:
+    with open(f"{SAVE_DIRECTORY}/config.json") as reader:
+        log.info("Reading config settings")
+        settings = json.load(reader)
+        
+    ENABLE_BUZZER    = settings["enable_buzzer"]
+    BUZZER_FREQUENCY = settings["buzzer_frequency"]
+    BUZZ_TIME        = settings["buzz_time"]
+    IDLE_TIME        = settings["idle_time"]
+    OBJECT_BLACKLIST = settings["object_blacklist"]
+    OBJECT_WHITELIST = settings["object_whitelist"]
+    
+# Handle errors
+except json.JSONDecodeError:
+    log.error("Error opening config.json, using default setting values instead")
+except KeyError:
+    log.error("config.json is missing one or more keys, using default setting values instead")
 
 # Global variables
 state = State.INACTIVE
@@ -150,7 +176,7 @@ def capture_video():
             idle_timer = time.perf_counter() # Reset idle timer
             
             # Check objects against blacklist/whitelist
-            if any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
+            if ENABLE_BUZZER and any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
                 # Activate the buzzer and start the timer
                 if buzzer_timer == 0: gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
                 buzzer_timer = time.perf_counter()

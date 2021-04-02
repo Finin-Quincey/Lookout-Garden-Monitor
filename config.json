@@ -1,0 +1,8 @@
+{
+    "idle_time": 20,
+    "object_blacklist": ["cat", "dog", "person"],
+    "object_whitelist": ["scissors"],
+    "enable_buzzer": true,
+    "buzz_time": 10,
+    "buzzer_frequency": 6000
+}
