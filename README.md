@@ -9,7 +9,7 @@ Code for my final year project (MIDP module, year 4 IDE) to design and build a d
 - SimplyTronics ST-00081 PIR sensor module
 - Arducam OV5647 5MP motorised IR-CUT camera (day & night vision)
 - 86dB piezo transducer buzzer
-- Custom veroboard PCB (see schematic)
+- Custom veroboard PCB (see [schematic](https://github.com/Finin-Quincey/Lookout-Garden-Monitor/blob/main/images/schematic.png))
 - Custom 3D-printed water-resistant housing with velcro straps for mounting
 
 ### Software
