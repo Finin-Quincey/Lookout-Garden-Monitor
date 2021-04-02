@@ -4,5 +4,10 @@
     "object_whitelist": ["scissors"],
     "enable_buzzer": true,
     "buzz_time": 10,
-    "buzzer_frequency": 6000
+    "buzzer_frequency": 6000,
+    "frame_buffer_size": 150,
+    "framerate": 10,
+    "confidence_threshold": 0.6,
+    "valid_objects": ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"],
+    "model_name": "Sample_TFLite_model"
 }

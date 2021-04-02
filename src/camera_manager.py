@@ -17,6 +17,7 @@ from datetime import datetime  # Real-world date and time
 import cv2                     # OpenCV functions
 import numpy as np             # Matrix operations
 from threading import Thread   # Concurrency
+import settings
 
 ### Constants ###
 
@@ -24,13 +25,9 @@ CAMERA_INDEX  = 0                # Index of the camera to use (there is only one
 WIDTH, HEIGHT = 1280, 720        # Image dimensions in pixels
 RESOLUTION    = (WIDTH, HEIGHT)  # Tuple version for convenience
 WINDOW_TITLE  = "Camera Preview" # Title of the preview window when in developer mode
-FRAMERATE     = 10               # Target framerate to capture at, in frames per second
 TEXT_COLOUR   = (255, 255, 255)  # Colour of the text at the top of the frame
 
 INACTIVE_SCREEN = np.zeros((HEIGHT, WIDTH, 3), dtype = "uint8") # Just a black screen for now (only used in dev mode)
-
-# Maximum number of frames the buffer can hold; prevents overloading the RAM
-FRAME_BUFFER_SIZE = 150
 
 ### Classes ###
 
@@ -112,7 +109,7 @@ class CaptureWriter():
         """
         Creates a new video file to write to, with the current date and time as its filename.
         """
-        self.writer = cv2.VideoWriter(f"{save_directory}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, FRAMERATE, RESOLUTION)
+        self.writer = cv2.VideoWriter(f"{save_directory}/captures/{datetime.now().strftime('%Y-%m-%d_%H%M%S')}.avi", codec, settings.FRAMERATE, RESOLUTION)
         
     def close_file(self):
         """
@@ -166,7 +163,7 @@ cv2.imshow(WINDOW_TITLE, INACTIVE_SCREEN)
 codec = cv2.VideoWriter_fourcc(*"XVID")
 
 # Stores the captured frames to be written to disk later
-frame_buffer = FrameBuffer(FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
+frame_buffer = FrameBuffer(settings.FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
 
 # Initialise writer thread
 writer = CaptureWriter(frame_buffer)

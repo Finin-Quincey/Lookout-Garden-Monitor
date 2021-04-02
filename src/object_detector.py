@@ -21,20 +21,16 @@ from threading import Thread  # Concurrency
 import importlib.util         # Library for importing TensorFlow stuff
 
 import camera_manager as camera
+import settings
 
 ### Constants ###
 
-MODEL_NAME           = "/home/pi/tflite/models/Sample_TFLite_model"  # Path to the model directory
 GRAPH_NAME           = "detect.tflite"  # Name of the graph (.tflite) file in the above directory
 LABELMAP_NAME        = "labelmap.txt"   # Name of the label map (.txt) file in the above directory
-CONFIDENCE_THRESHOLD = 0.6              # Minimum confidence for an object to count as a detection
-
-# All objects not in this list will be filtered out
-VALID_OBJECTS = ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"]
 
 # Derived values
-PATH_TO_CKPT   = os.path.join(MODEL_NAME,GRAPH_NAME)     # Path to .tflite file
-PATH_TO_LABELS = os.path.join(MODEL_NAME,LABELMAP_NAME)  # Path to label map file
+PATH_TO_CKPT   = os.path.join(settings.MODEL_NAME, GRAPH_NAME)     # Path to .tflite file
+PATH_TO_LABELS = os.path.join(settings.MODEL_NAME, LABELMAP_NAME)  # Path to label map file
 
 ### Setup ###
 
@@ -144,13 +140,13 @@ def process_next():
     scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
 
     # Remove results that are below the confidence threshold
-    idx = scores > CONFIDENCE_THRESHOLD
+    idx = scores > settings.CONFIDENCE_THRESHOLD
     boxes = boxes[idx]
     labels = labels[idx]
     scores = scores[idx]
     
     # Remove results that are not in the list of valid objects
-    idx = [label in VALID_OBJECTS for label in labels]
+    idx = [label in settings.VALID_OBJECTS for label in labels]
     boxes = boxes[idx]
     labels = labels[idx]
     scores = scores[idx]

@@ -8,13 +8,6 @@ shutting down the pi when the power button is pressed.
 Author: Finin Quincey
 """
 
-# Development mode is used when the pi is plugged into a monitor, mouse and keyboard, and has the following effects:
-# - The annotated camera feed is displayed on-screen
-# - Logging is set to DEBUG level instead of INFO so that DEBUG messages are logged as well
-# - When the power button is pressed, the program exits rather than shutting down the pi
-# - The directory used to save and load files is set to the Python working directory instead of the USB drive
-DEV_MODE = False
-
 import os                      # Operating system commands
 import sys                     # Python system commands
 import time                    # Timing functions
@@ -24,11 +17,8 @@ from enum import Enum          # Enumeration types
 import cv2                     # OpenCV for image processing
 import threading               # Concurrency
 import signal                  # System exit signals
-import json                    # JSON file parsing
 
 ### Constants ###
-
-SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1234-5678/Lookout"
 
 FORCE_SHUTDOWN_TIME = 5 # If the power button is held for longer than this many seconds, it forces a shutdown
 
@@ -41,54 +31,7 @@ class State(Enum):
     ACTIVE        = "Active"        # Currently recording footage
     SHUTTING_DOWN = "Shutting down" # Waiting to shut down the pi (saving and exiting)
     
-# Default Values
-
-ENABLE_BUZZER = True
-
-# For development purposes we're using an audible frequency so we can, well, hear it! Note that the circuit is designed to
-# resonate at 31kHz so it won't be as loud at other frequencies, and there may be artefacts/aliasing disrupting the tone
-BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequency for the buzzer
-
-BUZZ_TIME = 10 # Buzzer active time in seconds
-IDLE_TIME = 20 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
-
-# Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
-OBJECT_BLACKLIST = ["cat", "person", "dog"]
-# Objects in this list will prevent the buzzer from triggering (disarm it) if present
-OBJECT_WHITELIST = ["scissors"]
-    
 ### Initial Setup ###
-
-# Must set up logger before importing our own modules or it won't work properly
-log.basicConfig(format = "%(asctime)s [%(levelname)s] %(message)s",
-                datefmt = "%d-%m-%Y %I:%M:%S %p",
-                level = log.DEBUG if DEV_MODE else log.INFO,
-                handlers = [
-                    # Print to console and write to a log file
-                    log.FileHandler(f"{SAVE_DIRECTORY}/logs/{datetime.now().strftime('%Y-%m-%d_%H%M')}.log"),
-                    log.StreamHandler()
-                ])
-
-log.info("*** Lookout started ***")
-
-# Read config file
-try:
-    with open(f"{SAVE_DIRECTORY}/config.json") as reader:
-        log.info("Reading config settings")
-        settings = json.load(reader)
-        
-    ENABLE_BUZZER    = settings["enable_buzzer"]
-    BUZZER_FREQUENCY = settings["buzzer_frequency"]
-    BUZZ_TIME        = settings["buzz_time"]
-    IDLE_TIME        = settings["idle_time"]
-    OBJECT_BLACKLIST = settings["object_blacklist"]
-    OBJECT_WHITELIST = settings["object_whitelist"]
-    
-# Handle errors
-except json.JSONDecodeError:
-    log.error("Error opening config.json, using default setting values instead")
-except KeyError:
-    log.error("config.json is missing one or more keys, using default setting values instead")
 
 # Global variables
 state = State.INACTIVE
@@ -97,13 +40,14 @@ buzzer_timer = 0
 btn_hold_timer = 0
 
 # Initialise other modules
+import settings
 import gpio_manager as gpio
 gpio.set_power_led_state(True)
 gpio.enable_pir_sensor(True)
 import camera_manager as camera
 import object_detector
 
-if DEV_MODE:
+if settings.DEV_MODE:
     camera.display_current() # Show blank screen
     cv2.waitKey(2) # For some reason it needs 2ms
 
@@ -129,7 +73,7 @@ def on_power_btn_pressed(released):
             
             log.warning("Forcing shutdown! Capture data may be lost!")
             
-            if DEV_MODE:
+            if settings.DEV_MODE:
                 os.kill(os.getpid(), signal.SIGINT) # sys.exit() won't work here
             else:
                 os.system("sudo shutdown -h now")
@@ -176,26 +120,26 @@ def capture_video():
             idle_timer = time.perf_counter() # Reset idle timer
             
             # Check objects against blacklist/whitelist
-            if ENABLE_BUZZER and any(item in OBJECT_BLACKLIST for item in labels) and all(item1 not in OBJECT_WHITELIST for item1 in labels):
+            if settings.ENABLE_BUZZER and any(item in settings.OBJECT_BLACKLIST for item in labels) and all(item1 not in settings.OBJECT_WHITELIST for item1 in labels):
                 # Activate the buzzer and start the timer
-                if buzzer_timer == 0: gpio.set_buzzer_frequency(BUZZER_FREQUENCY)
+                if buzzer_timer == 0: gpio.set_buzzer_frequency(settings.BUZZER_FREQUENCY)
                 buzzer_timer = time.perf_counter()
                 
-        if buzzer_timer != 0 and time.perf_counter() - buzzer_timer >= BUZZ_TIME: # If buzzer time has elapsed
+        if buzzer_timer != 0 and time.perf_counter() - buzzer_timer >= settings.BUZZ_TIME: # If buzzer time has elapsed
             # Deactivate the buzzer and reset the timer
             gpio.set_buzzer_frequency(0)
             buzzer_timer = 0
         
         camera.annotate_current(boxes, labels, scores, measured_framerate, buzzer_timer != 0)
         
-        if DEV_MODE:
+        if settings.DEV_MODE:
             camera.display_current()
         
         if not camera.store_current(): # Stop recording if the buffer is full
             log.info("Buffer full, stopping current recording")
             return True
             
-        if time.perf_counter() - idle_timer >= IDLE_TIME: # If idle time has elapsed
+        if time.perf_counter() - idle_timer >= settings.IDLE_TIME: # If idle time has elapsed
             return True
         
         if state == State.SHUTTING_DOWN:
@@ -210,10 +154,10 @@ def capture_video():
                 gpio.set_power_led_state(False)
             i += 1
         
-        measured_framerate = min(camera.FRAMERATE, round(1/(time.perf_counter() - t), 1))
+        measured_framerate = min(settings.FRAMERATE, round(1/(time.perf_counter() - t), 1))
         
         # Try to keep a stable framerate by waiting for the rest of the time, if any
-        cv2.waitKey(max(1, int(1000 * (1.0/camera.FRAMERATE - (time.perf_counter() - t)))))
+        cv2.waitKey(max(1, int(1000 * (1.0/settings.FRAMERATE - (time.perf_counter() - t)))))
 
 ### Finish Setup ###
 
@@ -235,7 +179,7 @@ while state != State.SHUTTING_DOWN: # Keep doing this until the program shuts do
         idle_timer = time.perf_counter() # Start idle timer
         
         gpio.set_ir_led_state(True)
-        camera.open(SAVE_DIRECTORY) # Do this as close to first capture as possible to minimise delay
+        camera.open(settings.SAVE_DIRECTORY) # Do this as close to first capture as possible to minimise delay
     
         if capture_video():
             # capture_video() returned True so go back to sleep
@@ -260,7 +204,7 @@ gpio.finish_shutdown()
 
 log.info("*** Exiting program ***")
     
-if DEV_MODE:
+if settings.DEV_MODE:
     sys.exit()
 else:
     os.system("poweroff")
