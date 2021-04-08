@@ -1,5 +1,8 @@
 # 🦊 Lookout Garden Monitor
+
 Code for my final year project (MIDP module, year 4 IDE) to design and build a device for deterring unwanted animals from urban gardens. This repository contains the Python code that runs on a Raspberry Pi inside the prototype device, performing object recognition on the video feed from the camera to determine which animals are present and decide whether to activate the deterrent.
+
+![](https://github.com/Finin-Quincey/Lookout-Garden-Monitor/blob/main/images/banner.jpg)
 
 ## 🐈 Specs
 
