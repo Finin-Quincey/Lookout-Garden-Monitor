@@ -218,12 +218,16 @@ def capture_frame():
     """
     global stream
     global raw_frame
+    
     success, raw_frame = stream.read()
     raw_frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
-    # Perform histogram equalisation on value channel to improve image contrast
-    yuv = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2YUV)
-    yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
-    raw_frame = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+    
+    if settings.HISTOGRAM_EQUALISATION:
+        # Perform histogram equalisation on value channel to improve image contrast
+        yuv = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2YUV)
+        yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
+        raw_frame = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+        
     if not success:
         log.warning("Failed to retrieve current frame from camera")
 

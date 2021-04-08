@@ -39,6 +39,8 @@ OBJECT_WHITELIST = ["scissors"]
 FRAME_BUFFER_SIZE = 150 # Maximum number of frames the buffer can hold; prevents overloading the RAM
 FRAMERATE = 10          # Target framerate to capture at, in frames per second
 
+HISTOGRAM_EQUALISATION = True # Whether to perform histogram equalisation on the camera feed
+
 MODEL_NAME = f"{SAVE_DIRECTORY}/models/Sample_TFLite_model"  # Path to the model directory
 
 CONFIDENCE_THRESHOLD = 0.6 # Minimum confidence for an object to count as a detection
@@ -73,10 +75,11 @@ try:
     OBJECT_BLACKLIST = settings["object_blacklist"]
     OBJECT_WHITELIST = settings["object_whitelist"]
     
-    FRAME_BUFFER_SIZE    = settings["frame_buffer_size"]
-    FRAMERATE            = settings["framerate"]
-    CONFIDENCE_THRESHOLD = settings["confidence_threshold"]
-    VALID_OBJECTS        = settings["valid_objects"]
+    FRAME_BUFFER_SIZE      = settings["frame_buffer_size"]
+    FRAMERATE              = settings["framerate"]
+    HISTOGRAM_EQUALISATION = settings["histogram_equalisation"]
+    CONFIDENCE_THRESHOLD   = settings["confidence_threshold"]
+    VALID_OBJECTS          = settings["valid_objects"]
 
     MODEL_NAME = f"{SAVE_DIRECTORY}/models/{settings['model_name']}"
     
