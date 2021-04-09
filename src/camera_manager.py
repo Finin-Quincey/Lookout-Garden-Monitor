@@ -168,6 +168,9 @@ frame_buffer = FrameBuffer(settings.FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
 # Initialise writer thread
 writer = CaptureWriter(frame_buffer)
 
+# Stores objects detected this capture, for logging purposes
+detected_objects = []
+
 ### Functions ###
 
 def is_capturing():
@@ -201,6 +204,9 @@ def close():
     global writer
     writer.close_file()
     
+    global detected_objects
+    detected_objects = []
+    
 def shutdown():
     """
     Closes the camera, releases the resources it was using, saves any frames in the buffer and closes any open windows.
@@ -218,8 +224,20 @@ def capture_frame():
     """
     global stream
     global raw_frame
+    
     success, raw_frame = stream.read()
     raw_frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
+    
+    if settings.HISTOGRAM_EQUALISATION:
+        # Convert to YUV colour space
+        yuv = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2YUV)
+        # Flatten pixels with lowest y-channel, i.e. luma/brightness to make the darkest areas uniform before equalising
+        yuv[:, :, 0][yuv[:, :, 0] < settings.LUMA_THRESHOLD] = 0
+        # Perform histogram equalisation on luma channel to improve image contrast
+        yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
+        # Convert back to BGR colour space
+        raw_frame = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+        
     if not success:
         log.warning("Failed to retrieve current frame from camera")
 
@@ -255,6 +273,11 @@ def annotate_current(boxes, labels, scores, fps, buzzer_active):
         label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
         cv2.rectangle(annotated_frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
         cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+
+        global detected_objects
+        if object_name not in detected_objects:
+            log.info("Detected %s", object_name)
+            detected_objects.append(object_name)
 
     # Date and time
     cv2.putText(annotated_frame, f"{datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')}   {fps} fps   Buzzer {'active' if buzzer_active else 'inactive'}", (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOUR, 1, cv2.LINE_AA)

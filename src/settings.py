@@ -20,7 +20,9 @@ DEV_MODE = False
 
 SAVE_DIRECTORY = os.getcwd() if DEV_MODE else "/media/pi/1234-5678/Lookout"
 
-# Default Values
+### Default Values ###
+
+# Buzzer and timing
 
 ENABLE_BUZZER = True
 
@@ -31,20 +33,29 @@ BUZZER_FREQUENCY = 6000 if DEV_MODE else 31000 # 6kHz is the minimum rated frequ
 BUZZ_TIME = 10 # Buzzer active time in seconds
 IDLE_TIME = 20 # If no objects are detected in the camera feed for this many seconds, the device returns to inactive state
 
-# Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
-OBJECT_BLACKLIST = ["cat", "person", "dog"]
-# Objects in this list will prevent the buzzer from triggering (disarm it) if present
-OBJECT_WHITELIST = ["scissors"]
+# Recording parameters
 
 FRAME_BUFFER_SIZE = 150 # Maximum number of frames the buffer can hold; prevents overloading the RAM
 FRAMERATE = 10          # Target framerate to capture at, in frames per second
 
-MODEL_NAME = f"{SAVE_DIRECTORY}/models/Sample_TFLite_model"  # Path to the model directory
+# Image filtering
 
+LUMA_THRESHOLD = 18           # Threshold used to make darkest areas uniform; avoids large grey artefacts after equalisation
+HISTOGRAM_EQUALISATION = True # Whether to perform histogram equalisation on the camera feed
+
+# Object detection
+
+MODEL_NAME = f"{SAVE_DIRECTORY}/models/Sample_TFLite_model"  # Path to the model directory
 CONFIDENCE_THRESHOLD = 0.6 # Minimum confidence for an object to count as a detection
 
 # All objects not in this list will be filtered out
 VALID_OBJECTS = ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"]
+
+# Objects in this list will trigger the buzzer if present, as long as no whitelisted objects are present
+OBJECT_BLACKLIST = ["cat", "person", "dog"]
+
+# Objects in this list will prevent the buzzer from triggering (disarm it) if present
+OBJECT_WHITELIST = ["scissors"]
 
 ### Setup ###
 
@@ -73,10 +84,12 @@ try:
     OBJECT_BLACKLIST = settings["object_blacklist"]
     OBJECT_WHITELIST = settings["object_whitelist"]
     
-    FRAME_BUFFER_SIZE    = settings["frame_buffer_size"]
-    FRAMERATE            = settings["framerate"]
-    CONFIDENCE_THRESHOLD = settings["confidence_threshold"]
-    VALID_OBJECTS        = settings["valid_objects"]
+    FRAME_BUFFER_SIZE      = settings["frame_buffer_size"]
+    FRAMERATE              = settings["framerate"]
+    LUMA_THRESHOLD         = settings["luma_threshold"]
+    HISTOGRAM_EQUALISATION = settings["histogram_equalisation"]
+    CONFIDENCE_THRESHOLD   = settings["confidence_threshold"]
+    VALID_OBJECTS          = settings["valid_objects"]
 
     MODEL_NAME = f"{SAVE_DIRECTORY}/models/{settings['model_name']}"
     
