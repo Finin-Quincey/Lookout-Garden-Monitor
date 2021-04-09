@@ -8,6 +8,7 @@ Author: Finin Quincey
 
 import logging as log
 import pigpio as gpio # GPIO control library
+import settings
 
 ### Constants ###
 
@@ -111,7 +112,7 @@ def prepare_shutdown():
     # For now we need to turn this off for shutdown or it will stay on, at some point I may look into ways of turning it
     # off later on in the shutdown sequence but it doesn't really matter that much - the main thing is that it stays on
     # while the video is saving
-    enable_pir_sensor(False)
+    if not settings.DEV_MODE: enable_pir_sensor(False) # Keep PIR on in dev mode so we don't always have to wait for warm-up
     set_ir_led_state(False)
     set_buzzer_frequency(0)
     
