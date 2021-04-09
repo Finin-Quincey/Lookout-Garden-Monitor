@@ -223,9 +223,13 @@ def capture_frame():
     raw_frame = cv2.rotate(raw_frame, cv2.ROTATE_180)
     
     if settings.HISTOGRAM_EQUALISATION:
-        # Perform histogram equalisation on value channel to improve image contrast
+        # Convert to YUV colour space
         yuv = cv2.cvtColor(raw_frame, cv2.COLOR_BGR2YUV)
+        # Flatten pixels with lowest y-channel, i.e. luma/brightness to make the darkest areas uniform before equalising
+        yuv[:, :, 0][yuv[:, :, 0] < settings.LUMA_THRESHOLD] = 0
+        # Perform histogram equalisation on luma channel to improve image contrast
         yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])
+        # Convert back to BGR colour space
         raw_frame = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
         
     if not success:
