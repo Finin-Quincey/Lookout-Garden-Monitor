@@ -168,6 +168,9 @@ frame_buffer = FrameBuffer(settings.FRAME_BUFFER_SIZE, WIDTH, HEIGHT)
 # Initialise writer thread
 writer = CaptureWriter(frame_buffer)
 
+# Stores objects detected this capture, for logging purposes
+detected_objects = []
+
 ### Functions ###
 
 def is_capturing():
@@ -200,6 +203,9 @@ def close():
     
     global writer
     writer.close_file()
+    
+    global detected_objects
+    detected_objects = []
     
 def shutdown():
     """
@@ -267,6 +273,11 @@ def annotate_current(boxes, labels, scores, fps, buzzer_active):
         label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
         cv2.rectangle(annotated_frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
         cv2.putText(annotated_frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+
+        global detected_objects
+        if object_name not in detected_objects:
+            log.info("Detected %s", object_name)
+            detected_objects.append(object_name)
 
     # Date and time
     cv2.putText(annotated_frame, f"{datetime.now().strftime('%d-%m-%Y %I:%M:%S %p')}   {fps} fps   Buzzer {'active' if buzzer_active else 'inactive'}", (10, HEIGHT - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, TEXT_COLOUR, 1, cv2.LINE_AA)
