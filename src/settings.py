@@ -40,7 +40,7 @@ FRAMERATE = 10          # Target framerate to capture at, in frames per second
 
 # Image filtering
 
-LUMA_THRESHOLD = 18           # Threshold used to make darkest areas uniform; avoids large grey artefacts after equalisation
+LUMA_THRESHOLD = 4            # Threshold used to make darkest areas uniform; avoids large grey artefacts after equalisation
 HISTOGRAM_EQUALISATION = True # Whether to perform histogram equalisation on the camera feed
 
 # Object detection

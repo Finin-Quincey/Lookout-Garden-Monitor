@@ -7,7 +7,7 @@
     "buzzer_frequency": 6000,
     "frame_buffer_size": 150,
     "framerate": 10,
-    "luma_threshold": 18,
+    "luma_threshold": 4,
     "histogram_equalisation": true,
     "confidence_threshold": 0.6,
     "valid_objects": ["person", "cat", "dog", "bird", "horse", "sheep", "cow", "scissors"],
