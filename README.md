@@ -2,6 +2,8 @@
 
 Code for my final year project (MIDP module, year 4 IDE) to design and build a device for deterring unwanted animals from urban gardens. This repository contains the Python code (located under `src`) that runs on a Raspberry Pi inside the prototype device, performing object recognition on the video feed from the camera to determine which animals are present and decide whether to activate the deterrent. For an in-depth description of how the software operates, see the [activity diagram](https://github.com/Finin-Quincey/Lookout-Garden-Monitor/blob/main/images/activity_diagram.png) and [state diagram](https://github.com/Finin-Quincey/Lookout-Garden-Monitor/blob/main/images/state_diagram_simple.png).
 
+_This project won the [IMechE Mechatronics Engineering Student of the Year Award](https://www.imeche.org/industry-sectors/mechatronics-informatics-and-control/about-the-mechatronics-informatics-and-control-group/mechatronics-engineering-student-of-the-year-competition) 2022!_
+
 ![](https://github.com/Finin-Quincey/Lookout-Garden-Monitor/blob/main/images/banner.jpg)
 
 ## 🐈 Specs
