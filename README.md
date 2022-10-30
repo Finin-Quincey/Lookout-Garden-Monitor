@@ -25,7 +25,7 @@ _This project won the [IMechE Mechatronics Engineering Student of the Year Award
 - pigpio 1.78
 
 ## 🐾 Useful Links
-- [Installing TensorFlow Lite on Raspberry Pi](https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi/blob/master/Raspberry_Pi_Guide.md)
+- [Installing TensorFlow Lite on Raspberry Pi](https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi/blob/master/deploy_guides/Raspberry_Pi_Guide.md)
 - [Object Detection with TensorFlow Lite](https://www.tensorflow.org/lite/examples/object_detection/overview)
 - [OpenCV Python Tutorials](https://docs.opencv.org/4.4.0/d6/d00/tutorial_py_root.html)
 - [TensorFlow Model Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/tf1_detection_zoo.md#mobile-models)
